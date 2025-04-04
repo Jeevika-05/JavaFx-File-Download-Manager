@@ -11,7 +11,6 @@ import org.example.models.FileInfo;
 
 import java.io.File;
 import java.text.DecimalFormat;
-import java.util.List;
 
 public class DownloadManager {
 
@@ -23,61 +22,58 @@ public class DownloadManager {
 
     private int index = 0;
 
+    private DownloadThread currentDownloadThread;
+
     @FXML
     void downloadButtonClicked(ActionEvent event) {
         String url = urlTextField.getText().trim();
-
-        if (url.isEmpty() || !url.startsWith("http")) {
-            System.out.println("Invalid URL entered.");
-            return;
-        }
+        if (url.isEmpty()) return;
 
         String filename = url.substring(url.lastIndexOf("/") + 1);
-
-        // Avoid duplicate downloads
-        List<FileInfo> existingFiles = tableView.getItems();
-        boolean alreadyAdded = existingFiles.stream().anyMatch(f -> f.getUrl().equals(url));
-        if (alreadyAdded) {
-            System.out.println("File already added to download list.");
-            return;
-        }
-
         String status = "STARTING";
         String action = "OPEN";
         String path = AppConfig.DOWNLOAD_PATH + File.separator + filename;
-
         FileInfo file = new FileInfo(String.valueOf(++index), filename, url, status, action, path, "0");
-        tableView.getItems().add(file);
 
-        DownloadThread thread = new DownloadThread(file, this);
-        thread.start();
+        currentDownloadThread = new DownloadThread(file, this);
+        tableView.getItems().add(file);
+        currentDownloadThread.start();
 
         urlTextField.setText("");
     }
 
-    /**
-     * Called from DownloadThread to update the table UI
-     */
-    public void updateUI(FileInfo metaFile) {
-        try {
-            int idx = Integer.parseInt(metaFile.getIndex()) - 1;
-            FileInfo fileInfo = tableView.getItems().get(idx);
-            fileInfo.setStatus(metaFile.getStatus());
-
-            DecimalFormat decimalFormat = new DecimalFormat("0.0");
-            double percent = Double.parseDouble(metaFile.getPer());
-            fileInfo.setPer(decimalFormat.format(percent));
-
-            tableView.refresh();
-        } catch (Exception e) {
-            System.out.println("Error updating UI: " + e.getMessage());
+    @FXML
+    void pauseDownload(ActionEvent event) {
+        if (currentDownloadThread != null) {
+            currentDownloadThread.pauseDownload();
         }
     }
 
     @FXML
-    public void initialize() {
-        System.out.println("View initialized");
+    void resumeDownload(ActionEvent event) {
+        if (currentDownloadThread != null) {
+            currentDownloadThread.resumeDownload();
+        }
+    }
 
+    @FXML
+    void cancelDownload(ActionEvent event) {
+        if (currentDownloadThread != null) {
+            currentDownloadThread.cancelDownload();
+        }
+    }
+
+    public void updateUI(FileInfo metaFile) {
+        FileInfo fileInfo = tableView.getItems().get(Integer.parseInt(metaFile.getIndex()) - 1);
+        fileInfo.setStatus(metaFile.getStatus());
+
+        DecimalFormat decimalFormat = new DecimalFormat("0.0");
+        fileInfo.setPer(decimalFormat.format(Double.parseDouble(metaFile.getPer())));
+        tableView.refresh();
+    }
+
+    @FXML
+    public void initialize() {
         TableColumn<FileInfo, String> sn = (TableColumn<FileInfo, String>) tableView.getColumns().get(0);
         sn.setCellValueFactory(p -> p.getValue().indexProperty());
 
@@ -92,8 +88,9 @@ public class DownloadManager {
 
         TableColumn<FileInfo, String> per = (TableColumn<FileInfo, String>) tableView.getColumns().get(4);
         per.setCellValueFactory(p -> {
-            String formatted = p.getValue().getPer() + " %";
-            return new SimpleStringProperty(formatted);
+            SimpleStringProperty prop = new SimpleStringProperty();
+            prop.set(p.getValue().getPer() + " %");
+            return prop;
         });
 
         TableColumn<FileInfo, String> action = (TableColumn<FileInfo, String>) tableView.getColumns().get(5);

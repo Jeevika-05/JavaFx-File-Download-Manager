@@ -4,13 +4,16 @@ import javafx.beans.property.SimpleStringProperty;
 
 public class FileInfo {
 
-    private final SimpleStringProperty index = new SimpleStringProperty();
-    private final SimpleStringProperty name = new SimpleStringProperty();
-    private final SimpleStringProperty url = new SimpleStringProperty();
-    private final SimpleStringProperty status = new SimpleStringProperty();
-    private final SimpleStringProperty action = new SimpleStringProperty();
-    private final SimpleStringProperty path = new SimpleStringProperty();
-    private final SimpleStringProperty per = new SimpleStringProperty();
+    private SimpleStringProperty index = new SimpleStringProperty();
+    private SimpleStringProperty name = new SimpleStringProperty();
+    private SimpleStringProperty url = new SimpleStringProperty();
+    private SimpleStringProperty status = new SimpleStringProperty();
+    private SimpleStringProperty action = new SimpleStringProperty();
+    private SimpleStringProperty path = new SimpleStringProperty();
+    private SimpleStringProperty per = new SimpleStringProperty();
+
+    private long downloadedBytes;
+    private long totalBytes;
 
     public FileInfo(String index, String name, String url, String status, String action, String path, String per) {
         this.index.set(index);
@@ -22,89 +25,51 @@ public class FileInfo {
         this.per.set(per);
     }
 
-    public String getPer() {
-        return per.get();
+    public long getDownloadedBytes() {
+        return downloadedBytes;
     }
 
-    public SimpleStringProperty perProperty() {
-        return per;
+    public void setDownloadedBytes(long downloadedBytes) {
+        this.downloadedBytes = downloadedBytes;
     }
 
-    public void setPer(String per) {
-        this.per.set(per);
+    public long getTotalBytes() {
+        return totalBytes;
     }
 
-    public String getIndex() {
-        return index.get();
+    public void setTotalBytes(long totalBytes) {
+        this.totalBytes = totalBytes;
     }
 
-    public SimpleStringProperty indexProperty() {
-        return index;
-    }
+    // Existing Getters & Setters below
 
-    private void setIndex(String index) {
-        this.index.set(index);
-    }
+    public String getIndex() { return index.get(); }
+    public void setIndex(String index) { this.index.set(index); }
+    public SimpleStringProperty indexProperty() { return index; }
 
-    public String getName() {
-        return name.get();
-    }
+    public String getName() { return name.get(); }
+    public void setName(String name) { this.name.set(name); }
+    public SimpleStringProperty nameProperty() { return name; }
 
-    public SimpleStringProperty nameProperty() {
-        return name;
-    }
+    public String getUrl() { return url.get(); }
+    public void setUrl(String url) { this.url.set(url); }
+    public SimpleStringProperty urlProperty() { return url; }
 
-    public void setName(String name) {
-        this.name.set(name);
-    }
+    public String getStatus() { return status.get(); }
+    public void setStatus(String status) { this.status.set(status); }
+    public SimpleStringProperty statusProperty() { return status; }
 
-    public String getUrl() {
-        return url.get();
-    }
+    public String getAction() { return action.get(); }
+    public void setAction(String action) { this.action.set(action); }
+    public SimpleStringProperty actionProperty() { return action; }
 
-    public SimpleStringProperty urlProperty() {
-        return url;
-    }
+    public String getPath() { return path.get(); }
+    public void setPath(String path) { this.path.set(path); }
+    public SimpleStringProperty pathProperty() { return path; }
 
-    public void setUrl(String url) {
-        this.url.set(url);
-    }
-
-    public String getStatus() {
-        return status.get();
-    }
-
-    public SimpleStringProperty statusProperty() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status.set(status);
-    }
-
-    public String getAction() {
-        return action.get();
-    }
-
-    public SimpleStringProperty actionProperty() {
-        return action;
-    }
-
-    public void setAction(String action) {
-        this.action.set(action);
-    }
-
-    public String getPath() {
-        return path.get();
-    }
-
-    public SimpleStringProperty pathProperty() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path.set(path);
-    }
+    public String getPer() { return per.get(); }
+    public void setPer(String per) { this.per.set(per); }
+    public SimpleStringProperty perProperty() { return per; }
 
     @Override
     public String toString() {
@@ -115,6 +80,8 @@ public class FileInfo {
                 ", status=" + status +
                 ", action=" + action +
                 ", path=" + path +
+                ", downloadedBytes=" + downloadedBytes +
+                ", totalBytes=" + totalBytes +
                 '}';
     }
 }

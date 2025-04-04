@@ -19,7 +19,7 @@ public class App extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         scene = new Scene(loadFXML("downloadManager"), 1000, 700);
-        stage.setTitle("JavaFX IDM - Aman Download Manager");  // 👈 Added title
+        stage.setTitle("JavaFX IDM - Download Manager");  // 👈 Added title
         stage.setScene(scene);
         stage.show();
     }

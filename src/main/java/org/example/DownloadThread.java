@@ -5,68 +5,82 @@ import org.example.models.FileInfo;
 import java.io.BufferedInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 
 public class DownloadThread extends Thread {
 
     private final FileInfo file;
     private final DownloadManager manager;
 
+    private volatile boolean isPaused = false;
+    private volatile boolean isCancelled = false;
+
     public DownloadThread(FileInfo file, DownloadManager manager) {
         this.file = file;
         this.manager = manager;
     }
 
+    public void pauseDownload() {
+        this.isPaused = true;
+        file.setStatus("PAUSED");
+        manager.updateUI(file);
+    }
+
+    public void resumeDownload() {
+        this.isPaused = false;
+        file.setStatus("RESUMING");
+        manager.updateUI(file);
+    }
+
+    public void cancelDownload() {
+        this.isCancelled = true;
+        file.setStatus("CANCELLED");
+        manager.updateUI(file);
+    }
+
     @Override
     public void run() {
-        BufferedInputStream bis = null;
-        FileOutputStream fos = null;
+        file.setStatus("DOWNLOADING");
+        manager.updateUI(file);
 
-        try {
-            file.setStatus("DOWNLOADING");
-            manager.updateUI(file);
+        try (BufferedInputStream bis = new BufferedInputStream(new URL(file.getUrl()).openStream());
+             FileOutputStream fos = new FileOutputStream(file.getPath())) {
 
-            URL url = new URL(file.getUrl());
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(10_000); // 10 seconds timeout
-            connection.setReadTimeout(10_000);
-
-            int fileSize = connection.getContentLength();
-            if (fileSize <= 0) {
-                throw new IOException("Invalid file size.");
-            }
-
-            bis = new BufferedInputStream(connection.getInputStream());
-            fos = new FileOutputStream(file.getPath());
+            URLConnection urlConnection = new URL(file.getUrl()).openConnection();
+            int fileSize = urlConnection.getContentLength();
 
             byte[] buffer = new byte[1024];
-            int bytesRead;
-            double downloaded = 0;
+            int countByte;
+            double downloadedBytes = 0;
 
-            while ((bytesRead = bis.read(buffer, 0, buffer.length)) != -1) {
-                fos.write(buffer, 0, bytesRead);
-                downloaded += bytesRead;
+            while (!isCancelled && (countByte = bis.read(buffer, 0, 1024)) != -1) {
 
-                double percent = (downloaded / fileSize) * 100;
-                file.setPer(String.valueOf(percent));
-                manager.updateUI(file);
+                while (isPaused) {
+                    Thread.sleep(200);
+                }
+
+                fos.write(buffer, 0, countByte);
+                downloadedBytes += countByte;
+
+                if (fileSize > 0) {
+                    double percentage = (downloadedBytes / fileSize) * 100;
+                    file.setPer(String.valueOf(percentage));
+                    manager.updateUI(file);
+                }
             }
 
-            file.setStatus("DONE");
-            setName("Thread-" + file.getIndex());
-        } catch (IOException e) {
+            if (isCancelled) {
+                file.setStatus("CANCELLED");
+            } else {
+                file.setStatus("DONE");
+            }
+
+        } catch (IOException | InterruptedException e) {
             file.setStatus("FAILED");
-            System.err.println("Download failed: " + e.getMessage());
             e.printStackTrace();
-        } finally {
-            try {
-                if (fos != null) fos.close();
-                if (bis != null) bis.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            manager.updateUI(file);
         }
+
+        manager.updateUI(file);
     }
 }

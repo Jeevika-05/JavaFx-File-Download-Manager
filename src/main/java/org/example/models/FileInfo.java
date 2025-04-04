@@ -1,24 +1,18 @@
 package org.example.models;
 
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
-import org.example.DownloadManager;
 
 public class FileInfo {
 
-    private SimpleStringProperty index = new SimpleStringProperty();
-    private SimpleStringProperty name = new SimpleStringProperty();
-    private SimpleStringProperty url = new SimpleStringProperty();
-    private SimpleStringProperty status = new SimpleStringProperty();
-    //'DOWNLOADING' , "DONE", "STARTING"
-    private SimpleStringProperty action = new SimpleStringProperty();
+    private final SimpleStringProperty index = new SimpleStringProperty();
+    private final SimpleStringProperty name = new SimpleStringProperty();
+    private final SimpleStringProperty url = new SimpleStringProperty();
+    private final SimpleStringProperty status = new SimpleStringProperty();
+    private final SimpleStringProperty action = new SimpleStringProperty();
+    private final SimpleStringProperty path = new SimpleStringProperty();
+    private final SimpleStringProperty per = new SimpleStringProperty();
 
-    private SimpleStringProperty path = new SimpleStringProperty();
-    private SimpleStringProperty per=new SimpleStringProperty();
-
-
-
-    public FileInfo(String index, String name, String url, String status, String action, String path,String per) {
+    public FileInfo(String index, String name, String url, String status, String action, String path, String per) {
         this.index.set(index);
         this.name.set(name);
         this.url.set(url);
@@ -27,7 +21,6 @@ public class FileInfo {
         this.path.set(path);
         this.per.set(per);
     }
-
 
     public String getPer() {
         return per.get();
@@ -49,7 +42,7 @@ public class FileInfo {
         return index;
     }
 
-    public void setIndex(String index) {
+    private void setIndex(String index) {
         this.index.set(index);
     }
 

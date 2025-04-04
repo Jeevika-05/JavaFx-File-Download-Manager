@@ -7,14 +7,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class DownloadThread extends Thread {
 
-    private FileInfo file;
-    DownloadManager manager;
+    private final FileInfo file;
+    private final DownloadManager manager;
 
     public DownloadThread(FileInfo file, DownloadManager manager) {
         this.file = file;
@@ -23,62 +20,53 @@ public class DownloadThread extends Thread {
 
     @Override
     public void run() {
-
-        this.file.setStatus("DOWNLOADING");
-        this.manager.updateUI(this.file);
-
+        BufferedInputStream bis = null;
+        FileOutputStream fos = null;
 
         try {
-            //download logic
-            //Files.copy(new URL(this.file.getUrl()).openStream(), Paths.get(this.file.getPath()));
+            file.setStatus("DOWNLOADING");
+            manager.updateUI(file);
 
-            URL url = new URL(this.file.getUrl());
-            URLConnection urlConnection = url.openConnection();
-            int fileSize = urlConnection.getContentLength();
-            System.out.println("File size: " + fileSize);
+            URL url = new URL(file.getUrl());
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(10_000); // 10 seconds timeout
+            connection.setReadTimeout(10_000);
 
-            int countByte = 0;
-            double per = 0.0;
-            double byteSum = 0.0;
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(url.openStream());
-
-            FileOutputStream fos = new FileOutputStream(this.file.getPath());
-            byte data[] = new byte[1024];
-            while (true) {
-
-                countByte = bufferedInputStream.read(data, 0, 1024);
-                if (countByte == -1) {
-                    break;
-
-                }
-
-                fos.write(data, 0, countByte);
-
-                byteSum = byteSum + countByte;
-
-                if (fileSize > 0) {
-                    per = (byteSum / fileSize * 100);
-                    System.out.println(per);
-                    this.file.setPer(per + "");
-                    this.manager.updateUI(file);
-                }
-
-
+            int fileSize = connection.getContentLength();
+            if (fileSize <= 0) {
+                throw new IOException("Invalid file size.");
             }
 
-            fos.close();
-            bufferedInputStream.close();
+            bis = new BufferedInputStream(connection.getInputStream());
+            fos = new FileOutputStream(file.getPath());
 
-            this.setName(100 + "");
-            this.file.setStatus("DONE");
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            double downloaded = 0;
+
+            while ((bytesRead = bis.read(buffer, 0, buffer.length)) != -1) {
+                fos.write(buffer, 0, bytesRead);
+                downloaded += bytesRead;
+
+                double percent = (downloaded / fileSize) * 100;
+                file.setPer(String.valueOf(percent));
+                manager.updateUI(file);
+            }
+
+            file.setStatus("DONE");
+            setName("Thread-" + file.getIndex());
         } catch (IOException e) {
-            this.file.setStatus("FAILED");
-            System.out.println("Downloading error");
+            file.setStatus("FAILED");
+            System.err.println("Download failed: " + e.getMessage());
             e.printStackTrace();
         } finally {
-
+            try {
+                if (fos != null) fos.close();
+                if (bis != null) bis.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            manager.updateUI(file);
         }
-        this.manager.updateUI(this.file);
-
     }
 }
